@@ -7,6 +7,7 @@ import jobis.restapi.exception.TokenExpiredException;
 import jobis.restapi.util.CryptoUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,7 +20,7 @@ public class JwtValidator
     public void validate(HttpServletRequest request) throws InvalidTokenException, TokenExpiredException {
         String token = request.getHeader("Authorization");
 
-        if (token == null){
+        if (StringUtils.isEmpty(token)){
             throw new InvalidTokenException(String.format("token{%s} is invalid", token));
         }
 
