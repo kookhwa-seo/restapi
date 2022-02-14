@@ -80,7 +80,7 @@ public class UserJpaController {
         }
 
         String userJson = JsonUtil.toJson(userMap);
-        request.getSession().setAttribute("loginInfo", login);
+        request.getSession().setAttribute("loginId", userId);
 
         userMap.put("userId", userId);
         userMap.put("password", password);
@@ -92,12 +92,11 @@ public class UserJpaController {
 
     @GetMapping("/me")
     public User retrieveUser(HttpServletRequest request) {
-        Login loginInfo = (Login) request.getSession().getAttribute("loginInfo");
-        String userId = loginInfo.getUserId();
-        Optional<User> user = userRepository.findById(userId);
+        String loginId = (String) request.getSession().getAttribute("loginId");
+        Optional<User> user = userRepository.findById(loginId);
 
         if (!user.isPresent()) {
-            throw new UserNotFoundException(String.format("userId{%s} not found", userId));
+            throw new UserNotFoundException(String.format("userId{%s} not found", loginId));
         }
         return user.get();
     }
@@ -106,12 +105,11 @@ public class UserJpaController {
     public Scrap saveScrap(HttpServletRequest request, @Valid @RequestBody PersonalInfo personalInfo) throws Exception {
         Scrap scrapEntity = null;
 
-        Login loginInfo = (Login) request.getSession().getAttribute("loginInfo");
-        String userId = loginInfo.getUserId();
-        Optional<User> user = userRepository.findById(userId);
+        String loginId = (String) request.getSession().getAttribute("loginId");
+        Optional<User> user = userRepository.findById(loginId);
 
         if (!user.isPresent()) {
-            throw new UserNotFoundException(String.format("userId{%s} not found", userId));
+            throw new UserNotFoundException(String.format("userId{%s} not found", loginId));
         }
 
         scrapEntity = new Scrap();
@@ -158,15 +156,14 @@ public class UserJpaController {
     public HashMap<String, String> retrieveRefund(HttpServletRequest request) {
         HashMap<String, String> refundMap = new HashMap<>();;
 
-        Login loginInfo = (Login) request.getSession().getAttribute("loginInfo");
-        String userId = loginInfo.getUserId();
-        Optional<User> user = userRepository.findById(userId);
+        String loginId = (String) request.getSession().getAttribute("loginId");
+        Optional<User> user = userRepository.findById(loginId);
 
         //스크랩정보 조회
-        Optional<Scrap> scrap = scrapRepository.findById(userId);
+        Optional<Scrap> scrap = scrapRepository.findById(loginId);
 
         if (!scrap.isPresent()){
-            throw new ScrapNotFoundException(String.format("userId{%s}'s scrap data not found", userId));
+            throw new ScrapNotFoundException(String.format("userId{%s}'s scrap data not found", loginId));
         }else{
             refundMap.put("이름", user.get().getName());
 
