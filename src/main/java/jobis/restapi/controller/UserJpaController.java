@@ -108,6 +108,15 @@ public class UserJpaController {
         Login loginInfo = (Login) request.getSession().getAttribute("loginInfo");
         String userId = loginInfo.getUserId();
         Optional<User> user = userRepository.findById(userId);
+
+        if (!user.isPresent()) {
+            throw new UserNotFoundException(String.format("userId{%s} not found", userId));
+        }
+
+        scrapEntity = new Scrap();
+        scrapEntity.setUserId(user.get().getUserId());
+        scrapEntity.setUser(user.get());
+
         String encRegNo = CryptoUtil.encrypt(personalInfo.getRegNo().replace("-", ""));
 
         if (user.get().getRegNo().equals(encRegNo)){
@@ -121,8 +130,6 @@ public class UserJpaController {
                 LinkedTreeMap<String, Object> jsonList = (LinkedTreeMap<String, Object>) scrapMap.get("jsonList");
 
                 if (!CollectionUtils.isEmpty(jsonList) && jsonList.get("errMsg").equals("")){
-                    scrapEntity = new Scrap();
-                    scrapEntity.setUserId(userId);
                     for (Map.Entry<String, Object> entry : jsonList.entrySet()) {
                         if (entry.getKey().startsWith("scrap")){
                             List<Map<String, String>> scrap = (List<Map<String, String>>) jsonList.get(entry.getKey());

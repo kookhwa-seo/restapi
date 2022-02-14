@@ -14,16 +14,14 @@ import java.util.Date;
 
 @RestController
 @ControllerAdvice
-public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExceptionHandler
-{
+public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         ExceptionResponse exceptionResponse =
                 new ExceptionResponse(new Date(), ex.getMessage(), request.getDescription(false));
 
-        if (ex instanceof InvalidTokenException || ex instanceof TokenExpiredException)
-        {
+        if (ex instanceof InvalidTokenException || ex instanceof TokenExpiredException) {
             return new ResponseEntity(exceptionResponse, HttpStatus.UNAUTHORIZED);
         }
 
