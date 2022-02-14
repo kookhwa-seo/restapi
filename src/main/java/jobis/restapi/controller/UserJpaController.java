@@ -15,16 +15,24 @@ import jobis.restapi.util.ConvertFormat;
 import jobis.restapi.util.CryptoUtil;
 import jobis.restapi.util.JsonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.AsyncClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.concurrent.FailureCallback;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.SuccessCallback;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/szs")
@@ -103,7 +111,7 @@ public class UserJpaController {
 
     @PostMapping("/scrap")
     public Scrap saveScrap(HttpServletRequest request, @Valid @RequestBody PersonalInfo personalInfo) throws Exception {
-        Scrap scrapEntity = null;
+        Scrap scrapEntity = new Scrap();
 
         String loginId = (String) request.getSession().getAttribute("loginId");
         Optional<User> user = userRepository.findById(loginId);
@@ -112,40 +120,54 @@ public class UserJpaController {
             throw new UserNotFoundException(String.format("userId{%s} not found", loginId));
         }
 
-        scrapEntity = new Scrap();
         scrapEntity.setUserId(user.get().getUserId());
         scrapEntity.setUser(user.get());
 
         String encRegNo = CryptoUtil.encrypt(personalInfo.getRegNo().replace("-", ""));
 
         if (user.get().getRegNo().equals(encRegNo)){
-            RestTemplate restTemplate = new RestTemplate(getClientHttpRequestFactory());
+            AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate();
+            asyncRestTemplate.setAsyncRequestFactory(getClientHttpRequestFactory());
             HttpEntity<PersonalInfo> httpRequest = new HttpEntity<>(personalInfo);
             //scrap URL 호출
-            String scrapResult = restTemplate.postForObject(scrapURL, httpRequest, String.class);
+            ListenableFuture<ResponseEntity<String>> entity = asyncRestTemplate.postForEntity(scrapURL, httpRequest, String.class);
+            ResponseEntity<String> responseEntity = entity.get();
 
-            HashMap<String, Object> scrapMap = JsonUtil.fromJson(scrapResult, HashMap.class);
-            if (scrapMap.size() != 0){
-                LinkedTreeMap<String, Object> jsonList = (LinkedTreeMap<String, Object>) scrapMap.get("jsonList");
+            entity.addCallback(new SuccessCallback<ResponseEntity<String>>() {
+                @Override
+                public void onSuccess(ResponseEntity<String> result) {
+                    String scrapResult = responseEntity.getBody();
 
-                if (!CollectionUtils.isEmpty(jsonList) && jsonList.get("errMsg").equals("")){
-                    for (Map.Entry<String, Object> entry : jsonList.entrySet()) {
-                        if (entry.getKey().startsWith("scrap")){
-                            List<Map<String, String>> scrap = (List<Map<String, String>>) jsonList.get(entry.getKey());
-                            for(Map<String, String> temp : scrap){
-                                for (Map.Entry<String, String> tempEntry : temp.entrySet()) {
-                                    if (tempEntry.getKey().equals("총지급액")){
-                                        scrapEntity.setTotalPayment(Integer.valueOf(tempEntry.getValue()));
-                                    }
-                                    if (tempEntry.getKey().equals("총사용금액")){
-                                        scrapEntity.setTotalUseAmount(Integer.valueOf(tempEntry.getValue()));
+                    HashMap<String, Object> scrapMap = JsonUtil.fromJson(scrapResult, HashMap.class);
+                    if (scrapMap.size() != 0){
+                        LinkedTreeMap<String, Object> jsonList = (LinkedTreeMap<String, Object>) scrapMap.get("jsonList");
+
+                        if (!CollectionUtils.isEmpty(jsonList) && jsonList.get("errMsg").equals("")){
+                            for (Map.Entry<String, Object> entry : jsonList.entrySet()) {
+                                if (entry.getKey().startsWith("scrap")){
+                                    List<Map<String, String>> scrap = (List<Map<String, String>>) jsonList.get(entry.getKey());
+                                    for(Map<String, String> temp : scrap){
+                                        for (Map.Entry<String, String> tempEntry : temp.entrySet()) {
+                                            if (tempEntry.getKey().equals("총지급액")){
+                                                scrapEntity.setTotalPayment(Integer.valueOf(tempEntry.getValue()));
+                                            }
+                                            if (tempEntry.getKey().equals("총사용금액")){
+                                                scrapEntity.setTotalUseAmount(Integer.valueOf(tempEntry.getValue()));
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
+            }, new FailureCallback() {
+                @Override
+                public void onFailure(Throwable ex) {
+                    ex.printStackTrace();
+                }
+            });
+
             return scrapRepository.save(scrapEntity);
         }else{
             throw new UserNotFoundException(String.format("regNo not found"));
@@ -198,11 +220,10 @@ public class UserJpaController {
         return refundMap;
     }
 
-    private ClientHttpRequestFactory getClientHttpRequestFactory() {
-        //가장 오래 소요된 시간 19초(베지터)
-        int timeout = 30000;
-        HttpComponentsClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsClientHttpRequestFactory();
-        clientHttpRequestFactory.setConnectTimeout(timeout);
-        return clientHttpRequestFactory;
+    private AsyncClientHttpRequestFactory getClientHttpRequestFactory() {
+        final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
+        requestFactory.setReadTimeout(50000);
+        return requestFactory;
     }
 }
