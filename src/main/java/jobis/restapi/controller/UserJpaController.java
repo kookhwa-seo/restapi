@@ -179,7 +179,7 @@ public class UserJpaController {
                 limit = (int) (660000 - (totalPayment-70000000)*0.5);
                 limit = limit<500000 ? 500000 : limit;
             }
-            refundMap.put("한도액", ConvertFormat.convertMoney(limit));
+            refundMap.put("한도", ConvertFormat.convertMoney(limit));
 
             //공제액
             int deductible = 0;
