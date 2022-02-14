@@ -6,6 +6,7 @@ import jobis.restapi.domain.PersonalInfo;
 import jobis.restapi.domain.Scrap;
 import jobis.restapi.domain.User;
 import jobis.restapi.exception.PersonalInfoNotFoundException;
+import jobis.restapi.exception.ScrapNotFoundException;
 import jobis.restapi.exception.UserNotFoundException;
 import jobis.restapi.jpa.repository.PersonalInfoRepository;
 import jobis.restapi.jpa.repository.ScrapRepository;
@@ -161,10 +162,12 @@ public class UserJpaController {
         String userId = loginInfo.getUserId();
         Optional<User> user = userRepository.findById(userId);
 
-        //스크랩정보 조회해서 있으면 환급액 계산
+        //스크랩정보 조회
         Optional<Scrap> scrap = scrapRepository.findById(userId);
 
-        if (scrap.isPresent()){
+        if (!scrap.isPresent()){
+            throw new ScrapNotFoundException(String.format("userId{%s}'s scrap data not found", userId));
+        }else{
             refundMap.put("이름", user.get().getName());
 
             //한도
