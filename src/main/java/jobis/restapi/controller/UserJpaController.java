@@ -8,6 +8,7 @@ import jobis.restapi.domain.Scrap;
 import jobis.restapi.domain.User;
 import jobis.restapi.exception.PersonalInfoNotFoundException;
 import jobis.restapi.exception.ScrapNotFoundException;
+import jobis.restapi.exception.UserExistException;
 import jobis.restapi.exception.UserNotFoundException;
 import jobis.restapi.jpa.repository.PersonalInfoRepository;
 import jobis.restapi.jpa.repository.ScrapRepository;
@@ -67,7 +68,7 @@ public class UserJpaController {
 
         //존재하는 아이디일 때
         if (userRepository.existsById(user.getUserId())){
-            throw new UserNotFoundException(String.format("userId{%s} exist", user.getUserId()));
+            throw new UserExistException(String.format("userId{%s} exist", user.getUserId()));
         }
 
         //민감정보 암호화
