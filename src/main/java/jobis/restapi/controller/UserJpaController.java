@@ -1,6 +1,7 @@
 package jobis.restapi.controller;
 
 import com.google.gson.internal.LinkedTreeMap;
+import io.swagger.annotations.ApiOperation;
 import jobis.restapi.domain.Login;
 import jobis.restapi.domain.PersonalInfo;
 import jobis.restapi.domain.Scrap;
@@ -49,6 +50,7 @@ public class UserJpaController {
     private ScrapRepository scrapRepository;
 
     @PostMapping("/signup")
+    @ApiOperation(value = "회원가입", notes = "신규 사용자를 등록합니다.")
     public User createUser(@Valid @RequestBody User user) throws Exception {
         //개인정보 테이블에서 이름과 주민등록번호가 존재하는지 체크
         String encRegNo = CryptoUtil.encrypt(user.getRegNo());
@@ -71,6 +73,7 @@ public class UserJpaController {
     }
 
     @PostMapping("/login")
+    @ApiOperation(value = "로그인", notes = "로그인 정보를 이용하여 JWT Token을 생성합니다.")
     public HashMap<String, String> createToken(HttpServletRequest request, @Valid @RequestBody Login login) throws Exception {
         HashMap<String, String> userMap = new HashMap<String, String>();
 
@@ -99,6 +102,7 @@ public class UserJpaController {
     }
 
     @GetMapping("/me")
+    @ApiOperation(value = "내 정보 보기", notes = "token을 이용하여 자신의 회원가입 정보를 조회합니다.")
     public User retrieveUser(HttpServletRequest request) {
         String loginId = (String) request.getSession().getAttribute("loginId");
         Optional<User> user = userRepository.findById(loginId);
@@ -110,6 +114,7 @@ public class UserJpaController {
     }
 
     @PostMapping("/scrap")
+    @ApiOperation(value = "사용자 스크랩", notes = "제공된 스크랩 URL을 통해 환급액 계산에 필요한 사용자의 스크랩 정보를 저장합니다.")
     public Scrap saveScrap(HttpServletRequest request, @Valid @RequestBody PersonalInfo personalInfo) throws Exception {
         Scrap scrapEntity = new Scrap();
 
@@ -175,6 +180,7 @@ public class UserJpaController {
     }
 
     @GetMapping("/refund")
+    @ApiOperation(value = "환급액", notes = "사용자의 환급액 관련 정보를 조회합니다.")
     public HashMap<String, String> retrieveRefund(HttpServletRequest request) {
         HashMap<String, String> refundMap = new HashMap<>();;
 
