@@ -15,6 +15,7 @@ import jobis.restapi.jpa.repository.UserRepository;
 import jobis.restapi.util.ConvertFormat;
 import jobis.restapi.util.CryptoUtil;
 import jobis.restapi.util.JsonUtil;
+import jobis.restapi.util.Sha512Cipher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -70,7 +71,7 @@ public class UserJpaController {
         }
 
         //민감정보 암호화
-        user.setPassword(CryptoUtil.encrypt(user.getPassword()));
+        user.setPassword(Sha512Cipher.encrypt(user.getPassword()));
         user.setRegNo(encRegNo);
 
         return userRepository.save(user);
@@ -89,7 +90,7 @@ public class UserJpaController {
         if (!user.isPresent()){
             throw new UserNotFoundException(String.format("userId{%s} is not exist", userId));
         }else{
-            if(!user.get().getPassword().equals(CryptoUtil.encrypt(password))){
+            if(!user.get().getPassword().equals(Sha512Cipher.encrypt(password))){
                 throw new UserNotFoundException(String.format("password{%s} is incorrect", password));
             }
         }
