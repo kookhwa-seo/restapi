@@ -19,7 +19,7 @@ public class CryptoUtil{
 	private static long jwtValidate;
 	private static String securityKey;
 
-	public CryptoUtil(@Value("${securityKey}") String securityKey, @Value("${jwt.key}") String jwtKey, @Value("${jwt.validate}") long jwtValidate){
+	public CryptoUtil(@Value("${config.securityKey}") String securityKey, @Value("${jwt.key}") String jwtKey, @Value("${jwt.validate}") long jwtValidate){
 		this.securityKey = securityKey;
 		this.jwtKey = jwtKey;
 		this.jwtValidate = jwtValidate;

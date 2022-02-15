@@ -16,6 +16,7 @@ import jobis.restapi.util.ConvertFormat;
 import jobis.restapi.util.CryptoUtil;
 import jobis.restapi.util.JsonUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,9 @@ public class UserJpaController {
 
     @Autowired
     private ScrapRepository scrapRepository;
+
+    @Autowired
+    private Environment environment;
 
     @PostMapping("/signup")
     @ApiOperation(value = "회원가입", notes = "신규 사용자를 등록합니다.")
@@ -227,9 +231,10 @@ public class UserJpaController {
     }
 
     private AsyncClientHttpRequestFactory getClientHttpRequestFactory() {
-        final SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        String timout = environment.getProperty("config.read-timeout");
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
-        requestFactory.setReadTimeout(50000);
+        requestFactory.setReadTimeout(Integer.parseInt(timout));
         return requestFactory;
     }
 }
