@@ -1,0 +1,9 @@
+### 김둘리 스크랩 1회 시도
+POST http://localhost:8081/szs/scrap
+Content-Type: application/json
+Authorization: {{authorizationKey}}
+
+{
+  "name" : "김둘리",
+  "regNo" : "921108-1582816"
+}

@@ -1,0 +1,23 @@
+
+### 김둘리 회원가입
+POST http://localhost:8081/szs/signup
+Content-Type: application/json
+
+{
+  "userId" : "test2",
+  "name" : "김둘리",
+  "regNo" : "921108-1582816",
+  "password" : "2222"
+}
+
+### 김둘리 스크랩
+POST http://localhost:8081/szs/login
+Content-Type: application/json
+
+{
+  "userId" : "test2",
+  "password" : "2222"
+}
+> {%
+client.global.set("authorizationKey", response.body.token);
+%}
