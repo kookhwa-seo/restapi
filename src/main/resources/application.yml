@@ -15,4 +15,4 @@ jwt:
 
 config:
   securityKey: D0123456789012345678901234567890
-  read-timeout: 20000
+  read-timeout: 30000

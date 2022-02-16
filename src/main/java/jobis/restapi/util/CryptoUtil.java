@@ -1,10 +1,15 @@
 package jobis.restapi.util;
 
 import io.jsonwebtoken.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,10 +25,14 @@ public class CryptoUtil{
 	public static long jwtValidate;
 	private static String securityKey;
 
-	public CryptoUtil(@Value("${config.securityKey}") String securityKey, @Value("${jwt.key}") String jwtKey, @Value("${jwt.validate}") long jwtValidate){
-		this.securityKey = securityKey;
-		this.jwtKey = jwtKey;
-		this.jwtValidate = jwtValidate;
+	@Autowired
+	private Environment environment;
+
+	@PostConstruct
+	public void init(){
+		this.securityKey = environment.getProperty("config.securityKey");
+		this.jwtKey = environment.getProperty("jwt.key");
+		this.jwtValidate = Long.valueOf(environment.getProperty("jwt.validate"));
 	}
 
 	public static SecretKeySpec getKeySpec()

@@ -13,23 +13,14 @@ import jobis.restapi.exception.UserNotFoundException;
 import jobis.restapi.jpa.repository.PersonalInfoRepository;
 import jobis.restapi.jpa.repository.ScrapRepository;
 import jobis.restapi.jpa.repository.UserRepository;
-import jobis.restapi.util.ConvertFormat;
-import jobis.restapi.util.CryptoUtil;
-import jobis.restapi.util.JsonUtil;
-import jobis.restapi.util.Sha512Cipher;
+import jobis.restapi.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.AsyncClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.concurrent.FailureCallback;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SuccessCallback;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.AsyncRestTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -53,7 +44,7 @@ public class UserJpaController {
     private ScrapRepository scrapRepository;
 
     @Autowired
-    private Environment environment;
+    RestClient restClient;
 
     @PostMapping("/signup")
     @ApiOperation(value = "회원가입", notes = "신규 사용자를 등록합니다.")
@@ -132,11 +123,7 @@ public class UserJpaController {
         String encRegNo = CryptoUtil.encrypt(personalInfo.getRegNo().replace("-", ""));
 
         if (user.get().getRegNo().equals(encRegNo)){
-            AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate();
-            asyncRestTemplate.setAsyncRequestFactory(getClientHttpRequestFactory());
-            HttpEntity<PersonalInfo> httpRequest = new HttpEntity<>(personalInfo);
-            //scrap URL 호출
-            ListenableFuture<ResponseEntity<String>> entity = asyncRestTemplate.postForEntity(scrapURL, httpRequest, String.class);
+            ListenableFuture<ResponseEntity<String>> entity = restClient.request(scrapURL, personalInfo);
             ResponseEntity<String> responseEntity = entity.get();
 
             entity.addCallback(new SuccessCallback<ResponseEntity<String>>() {
@@ -225,13 +212,5 @@ public class UserJpaController {
             refundMap.put("환급액", ConvertFormat.convertMoney(refund));
         }
         return refundMap;
-    }
-
-    private AsyncClientHttpRequestFactory getClientHttpRequestFactory() {
-        String timout = environment.getProperty("config.read-timeout");
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
-        requestFactory.setReadTimeout(Integer.parseInt(timout));
-        return requestFactory;
     }
 }
