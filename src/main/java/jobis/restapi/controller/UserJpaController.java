@@ -6,16 +6,16 @@ import jobis.restapi.domain.Login;
 import jobis.restapi.domain.PersonalInfo;
 import jobis.restapi.domain.Scrap;
 import jobis.restapi.domain.User;
-import jobis.restapi.exception.PersonalInfoNotFoundException;
-import jobis.restapi.exception.ScrapNotFoundException;
-import jobis.restapi.exception.UserExistException;
-import jobis.restapi.exception.UserNotFoundException;
+import jobis.restapi.exception.*;
 import jobis.restapi.jpa.repository.PersonalInfoRepository;
 import jobis.restapi.jpa.repository.ScrapRepository;
 import jobis.restapi.jpa.repository.UserRepository;
 import jobis.restapi.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.concurrent.FailureCallback;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -28,11 +28,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/szs")
 public class UserJpaController {
     final private String scrapURL = "https://codetest.3o3.co.kr/scrap/";
+    //final private String scrapURL = "http://localhost:8088/jpa/users";
 
     @Autowired
     private UserRepository userRepository;
@@ -105,6 +107,7 @@ public class UserJpaController {
         return user.get();
     }
 
+    @Retryable(value = ExecutionException.class, maxAttempts = 4, backoff = @Backoff(delay = 1000))
     @PostMapping("/scrap")
     @ApiOperation(value = "사용자 스크랩", notes = "제공된 스크랩 URL을 통해 환급액 계산에 필요한 사용자의 스크랩 정보를 저장합니다.")
     public Scrap saveScrap(HttpServletRequest request, @Valid @RequestBody PersonalInfo personalInfo) throws Exception {
@@ -152,12 +155,14 @@ public class UserJpaController {
                                 }
                             }
                         }
+                    }else{
+                        throw new ScrapNotFoundException(String.format("userId{%s}'s scrap data not found", loginId));
                     }
                 }
             }, new FailureCallback() {
                 @Override
                 public void onFailure(Throwable ex) {
-                    ex.printStackTrace();
+                    throw new ScrapNotFoundException(String.format("userId{%s}'s scrap data not found", loginId));
                 }
             });
 
@@ -165,6 +170,11 @@ public class UserJpaController {
         }else{
             throw new UserNotFoundException(String.format("regNo not found"));
         }
+    }
+
+    @Recover
+    public Scrap recover(ExecutionException e, HttpServletRequest request, @Valid @RequestBody PersonalInfo personalInfo) throws Exception {
+        throw new ConnectionException("scrap URL service connection fail");
     }
 
     @GetMapping("/refund")

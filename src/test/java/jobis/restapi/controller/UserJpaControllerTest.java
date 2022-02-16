@@ -343,29 +343,11 @@ public class UserJpaControllerTest {
                 .header("Authorization", token)
                 .contentType(MediaType.APPLICATION_JSON_UTF8));
 
-        ResultActions actions4 = mockMvc.perform(post("/szs/scrap")
-                .content(object)
-                .accept(MediaType.APPLICATION_JSON)
-                .session(session)
-                .header("Authorization", token)
-                .contentType(MediaType.APPLICATION_JSON_UTF8));
-
-        ResultActions actions5 = mockMvc.perform(post("/szs/scrap")
-                .content(object)
-                .accept(MediaType.APPLICATION_JSON)
-                .session(session)
-                .header("Authorization", token)
-                .contentType(MediaType.APPLICATION_JSON_UTF8));
-
         actions1.andDo(print())
                 .andExpect(status().isOk());
         actions2.andDo(print())
                 .andExpect(status().isOk());
         actions3.andDo(print())
-                .andExpect(status().isOk());
-        actions4.andDo(print())
-                .andExpect(status().isOk());
-        actions5.andDo(print())
                 .andExpect(status().isOk());
     }
     

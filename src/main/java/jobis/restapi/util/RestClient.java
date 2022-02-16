@@ -1,6 +1,5 @@
 package jobis.restapi.util;
 
-import jobis.restapi.domain.PersonalInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -26,7 +25,6 @@ public class RestClient {
         requestFactory= new SimpleClientHttpRequestFactory();
         requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
         String timout = environment.getProperty("config.read-timeout");
-
         requestFactory.setReadTimeout(Integer.parseInt(timout));
     }
 
