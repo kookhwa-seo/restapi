@@ -11,12 +11,13 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 
 @Component
 public class CryptoUtil{
 	private final static String enc = "UTF-8";
 	private static String jwtKey;
-	private static long jwtValidate;
+	public static long jwtValidate;
 	private static String securityKey;
 
 	public CryptoUtil(@Value("${config.securityKey}") String securityKey, @Value("${jwt.key}") String jwtKey, @Value("${jwt.validate}") long jwtValidate){
@@ -83,8 +84,14 @@ public class CryptoUtil{
 			return paramText;
 		}
 	}
-	public static String createJWT(String userId, String subject)
+	public static String createJWT(String userId, String password)
 	{
+		HashMap<String, String> userMap = new HashMap<String, String>();
+
+		userMap.put("userId", userId);
+		userMap.put("password", password);
+		String subject = JsonUtil.toJson(userMap);
+
 		//The JWT signature algorithm we will be using to sign the token
 		SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.HS256;
 

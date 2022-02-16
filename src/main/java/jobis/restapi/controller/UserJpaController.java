@@ -81,8 +81,6 @@ public class UserJpaController {
     @PostMapping("/login")
     @ApiOperation(value = "로그인", notes = "로그인 정보를 이용하여 JWT Token을 생성합니다.")
     public HashMap<String, String> createToken(HttpServletRequest request, @Valid @RequestBody Login login) throws Exception {
-        HashMap<String, String> userMap = new HashMap<String, String>();
-
         String userId = login.getUserId();
         String password = login.getPassword();
         Optional<User> user = userRepository.findById(userId);
@@ -96,12 +94,9 @@ public class UserJpaController {
             }
         }
 
-        String userJson = JsonUtil.toJson(userMap);
         request.getSession().setAttribute("loginId", userId);
 
-        userMap.put("userId", userId);
-        userMap.put("password", password);
-        String token = CryptoUtil.createJWT(userId, userJson);
+        String token = CryptoUtil.createJWT(userId, password);
         HashMap<String, String> result = new HashMap<>();
         result.put("token", token);
         return result;
